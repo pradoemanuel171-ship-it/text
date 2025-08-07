@@ -7,24 +7,31 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.static('public'));
 
-app.use('/proxy', createProxyMiddleware({
-  target: '',
-  changeOrigin: true,
-  selfHandleResponse: true,
-  pathRewrite: {
-    '^/proxy/': '/'
-  },
-  onProxyReq: (proxyReq, req, res) => {
-    const target = decodeURIComponent(req.url.split('/proxy/')[1]);
-    proxyReq.path = new URL(target).pathname + new URL(target).search;
-    proxyReq.setHeader('referer', new URL(target).origin);
-    proxyReq.setHeader('origin', new URL(target).origin);
-  },
-  onProxyRes: (proxyRes) => {
-    delete proxyRes.headers['x-frame-options'];
-    delete proxyRes.headers['content-security-policy'];
+app.use('/proxy', (req, res, next) => {
+  const targetUrl = decodeURIComponent(req.url.replace(/^\/proxy\//, ''));
+
+  if (!targetUrl.startsWith('http')) {
+    return res.status(400).send('URL inválida');
   }
-}));
+
+  // Crea el middleware dinámicamente con target correcto
+  const proxy = createProxyMiddleware({
+    target: targetUrl,
+    changeOrigin: true,
+    pathRewrite: () => '',
+    onProxyReq: (proxyReq) => {
+      const origin = new URL(targetUrl).origin;
+      proxyReq.setHeader('referer', origin);
+      proxyReq.setHeader('origin', origin);
+    },
+    onProxyRes: (proxyRes) => {
+      delete proxyRes.headers['x-frame-options'];
+      delete proxyRes.headers['content-security-policy'];
+    }
+  });
+
+  return proxy(req, res, next);
+});
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
