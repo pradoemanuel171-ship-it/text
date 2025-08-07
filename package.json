@@ -1,0 +1,14 @@
+{
+  "name": "proxy-eruda-railway",
+  "version": "1.0.0",
+  "description": "Proxy en Node.js con Eruda para carga de páginas en iframe",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6"
+  }
+}
